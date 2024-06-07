@@ -40,25 +40,7 @@ const labels = [
   { title: 'QA AUTO CHECK', type: COLORS.PURPLE },
 ];
 
-// background-color
-const backgroundClass = {
-  [COLORS.NEUTRAL]: isJiraTicketPage ? 'css-8wztwn' : 'cc-1mququ6',
-  [COLORS.GREEN]: isJiraTicketPage ? 'css-1nlc156' : 'cc-vklyj9',
-  [COLORS.RED]: isJiraTicketPage ? 'css-2ud35r' : 'cc-13x1l8e',
-  [COLORS.BLUE]: isJiraTicketPage ? 'css-1j3eiiz' : 'cc-1b1zhv0',
-  [COLORS.YELLOW]: isJiraTicketPage ? 'css-5b1snf' : 'cc-12rj1a3',
-  [COLORS.PURPLE]: isJiraTicketPage ? 'css-tojbwx' : 'cc-duzunl',
-};
-
-// text-color
-const textClass = {
-  [COLORS.NEUTRAL]: isJiraTicketPage ? 'css-18kwa17' : 'cc-rs4fa3',
-  [COLORS.GREEN]: isJiraTicketPage ? 'css-1et8jlg' : 'cc-hd6gza',
-  [COLORS.RED]: isJiraTicketPage ? 'css-1i1uhdn' : 'cc-1weev9x',
-  [COLORS.BLUE]: isJiraTicketPage ? 'css-5ok1f9' : 'cc-lt5xxh',
-  [COLORS.YELLOW]: isJiraTicketPage ? 'css-15u8od2' : 'cc-1pigi8r',
-  [COLORS.PURPLE]: isJiraTicketPage ? 'css-1u0x9tu' : 'cc-1l1f8fe',
-};
+const buttonStyles = {};
 
 function updateInput(input, statusNode) {
   input.textContent = statusNode.innerText;
@@ -83,16 +65,28 @@ function activateColors(colorButtons) {
   }
 
   if (activeButton !== colorButtons[colorButtons.length - 1]) {
-    activeButton.click();
+    activeButton?.click();
   }
 }
 
-function appendCandidateLabels(targetUnorderedList) {
-  const popoverSelector =
-    'div[aria-label="Popup"][data-testid="popup-wrapper"][data-editor-popup="true"]';
-  const popoverElement = document.querySelector(popoverSelector);
-  const input = popoverElement.querySelector('input');
-  const colorButtons = Array.from(popoverElement.querySelectorAll('button'));
+function setButtonStyles(colorButtons) {
+  for (const { title, style } of colorButtons) {
+    const { backgroundColor, border } = style;
+
+    buttonStyles[title.toLowerCase()] = { backgroundColor, border };
+  }
+}
+
+function appendCandidateLabels(popupElement) {
+  const targetUnorderedList = popupElement.querySelector('ul');
+  const input = popupElement.querySelector('input');
+  const colorButtons = Array.from(popupElement.querySelectorAll('button'));
+
+  if (!targetUnorderedList || colorButtons.length === 0) return;
+
+  if (Object.entries(buttonStyles).length === 0) {
+    setButtonStyles(colorButtons);
+  }
 
   activateColors(colorButtons);
 
@@ -101,7 +95,6 @@ function appendCandidateLabels(targetUnorderedList) {
     const parentSpan = document.createElement('span');
     const childSpan = document.createElement('span');
 
-    childSpan.className = textClass[type];
     childSpan.style.maxWidth = 'calc(200px - var(--ds-space-100, 8px))';
     childSpan.innerText = title;
     childSpan.addEventListener('click', (el) => {
@@ -111,7 +104,8 @@ function appendCandidateLabels(targetUnorderedList) {
       });
     });
 
-    parentSpan.className = backgroundClass[type];
+    parentSpan.style.backgroundColor = buttonStyles?.[type]?.backgroundColor;
+    parentSpan.style.border = buttonStyles?.[type]?.border;
     parentSpan.style.padding = '4px';
     parentSpan.style.borderRadius = '4px';
     parentSpan.appendChild(childSpan);
@@ -119,10 +113,12 @@ function appendCandidateLabels(targetUnorderedList) {
     li.appendChild(parentSpan);
     li.style.cursor = 'pointer';
     li.style.width = '100%';
+    li.style.margin = '4px 0';
 
     targetUnorderedList.style.listStyleType = 'none';
-    targetUnorderedList.dataset.isCandidateLabelsAppended = 'true';
     targetUnorderedList.appendChild(li);
+
+    popupElement.dataset.isCandidateLabelsAppended = 'true';
   }
 }
 
@@ -145,18 +141,15 @@ function initObserver() {
     for (const mutation of mutationsList) {
       if (mutation.type !== 'childList') return;
 
-      const targetUnorderedSelector = isJiraTicketPage
-        ? 'ul.css-5vty0s'
-        : 'ul.cc-5vty0s';
-      const targetUnorderedList = document.querySelector(
-        targetUnorderedSelector
+      const targetPopupElement = document.querySelector(
+        'div[aria-label="Popup"][data-testid="popup-wrapper"][data-editor-popup="true"]'
       );
 
       if (
-        targetUnorderedList &&
-        targetUnorderedList.dataset?.isCandidateLabelsAppended !== 'true'
+        targetPopupElement &&
+        targetPopupElement.dataset?.isCandidateLabelsAppended !== 'true'
       ) {
-        appendCandidateLabels(targetUnorderedList);
+        appendCandidateLabels(targetPopupElement);
       }
     }
   });
