@@ -22,6 +22,15 @@ const COLORS = {
   PURPLE: 'purple',
 };
 
+const fontColorMap = {
+  [COLORS.NEUTRAL]: '#9fadbc',
+  [COLORS.GREEN]: '#7ee2b8',
+  [COLORS.YELLOW]: '#f5cd47',
+  [COLORS.RED]: '#fd9891',
+  [COLORS.BLUE]: '#85b8ff',
+  [COLORS.PURPLE]: '#b8acf6',
+};
+
 const labels = [
   { title: 'DEV CHECKED', type: COLORS.GREEN },
   { title: 'QA CHECKED', type: COLORS.GREEN },
@@ -56,8 +65,10 @@ function updateInput(input, statusNode) {
 }
 
 function activateColors(colorButtons) {
-  const activeButton = colorButtons.find((button) =>
-    button.className.includes('selected')
+  const activeButton = colorButtons.find(
+    (button) =>
+      button.className.includes('selected') ||
+      button.getAttribute('aria-pressed') === 'true'
   );
 
   for (const button of colorButtons) {
@@ -71,9 +82,9 @@ function activateColors(colorButtons) {
 
 function setButtonStyles(colorButtons) {
   for (const { title, style } of colorButtons) {
-    const { backgroundColor, border } = style;
+    const { backgroundColor, borderColor } = style;
 
-    buttonStyles[title.toLowerCase()] = { backgroundColor, border };
+    buttonStyles[title.toLowerCase()] = { backgroundColor, borderColor };
   }
 }
 
@@ -105,15 +116,25 @@ function appendCandidateLabels(popupElement) {
     });
 
     parentSpan.style.backgroundColor = buttonStyles?.[type]?.backgroundColor;
-    parentSpan.style.border = buttonStyles?.[type]?.border;
+    parentSpan.style.border = `${buttonStyles?.[type]?.borderColor} 1px solid`;
+    parentSpan.style.color = fontColorMap[type];
+    parentSpan.style.opacity = '0.7';
     parentSpan.style.padding = '4px';
     parentSpan.style.borderRadius = '4px';
+    parentSpan.addEventListener(
+      'mouseenter',
+      () => (parentSpan.style.opacity = '1')
+    );
+    parentSpan.addEventListener(
+      'mouseleave',
+      () => (parentSpan.style.opacity = '0.7')
+    );
     parentSpan.appendChild(childSpan);
 
     li.appendChild(parentSpan);
     li.style.cursor = 'pointer';
     li.style.width = '100%';
-    li.style.margin = '4px 0';
+    li.style.marginTop = '12px';
 
     targetUnorderedList.style.listStyleType = 'none';
     targetUnorderedList.appendChild(li);
