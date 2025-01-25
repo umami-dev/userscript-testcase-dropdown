@@ -22,14 +22,11 @@ const COLORS = {
   PURPLE: 'purple',
 };
 
-const fontColorMap = {
-  [COLORS.NEUTRAL]: '#9fadbc',
-  [COLORS.GREEN]: '#7ee2b8',
-  [COLORS.YELLOW]: '#f5cd47',
-  [COLORS.RED]: '#fd9891',
-  [COLORS.BLUE]: '#85b8ff',
-  [COLORS.PURPLE]: '#b8acf6',
-};
+const targetElement = document.documentElement;
+let fontColor = 'white';
+const stopWatching = watchColorModeChange(targetElement, (newTheme) => {
+  fontColor = newTheme === 'dark' ? 'white' : 'black';
+});
 
 const labels = [
   { title: 'DEV CHECKED', type: COLORS.GREEN },
@@ -50,6 +47,27 @@ const labels = [
 ];
 
 const buttonStyles = {};
+
+function watchColorModeChange(targetElement, callback) {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (
+        mutation.type === 'attributes' &&
+        mutation.attributeName === 'data-color-mode'
+      ) {
+        const newValue = targetElement.getAttribute('data-color-mode');
+
+        callback(newValue);
+      }
+    });
+  });
+
+  // Start observing the target element for attribute changes
+  observer.observe(targetElement, { attributes: true });
+
+  // Return a function to disconnect the observer when no longer needed
+  return () => observer.disconnect();
+}
 
 function updateInput(input, statusNode) {
   input.textContent = statusNode.innerText;
@@ -117,7 +135,7 @@ function appendCandidateLabels(popupElement) {
 
     parentSpan.style.backgroundColor = buttonStyles?.[type]?.backgroundColor;
     parentSpan.style.border = `${buttonStyles?.[type]?.borderColor} 1px solid`;
-    parentSpan.style.color = fontColorMap[type];
+    parentSpan.style.color = fontColor;
     parentSpan.style.opacity = '0.7';
     parentSpan.style.padding = '4px';
     parentSpan.style.borderRadius = '4px';
